@@ -1,98 +1,152 @@
 
 
-# Import necessary libraries
 import streamlit as st
 import math
 
-# Set page configuration
-st.set_page_config(page_title="Scientific Calculator", page_icon="🧮", layout="centered")
+# Page Configurations
+st.set_page_config(page_title="Modern Scientific Calculator", page_icon="🧮", layout="centered")
 
-# Styling
+# Custom CSS for calculator look and feel
 st.markdown("""
     <style>
-    body {
-        background-color: #f0f2f6;
+    .calculator {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        max-width: 400px;
+        margin: auto;
     }
     .stButton>button {
-        background-color: #ff6347;
+        background-color: #1e3c72;
         color: white;
-        padding: 10px 20px;
-        font-size: 16px;
-        border-radius: 5px;
+        font-size: 20px;
+        padding: 15px 0;
+        border-radius: 10px;
+        width: 100%;
+    }
+    .stTextInput>div>input {
+        font-size: 25px;
+        text-align: right;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #1e3c72;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# App title and introduction
-st.title("🧮 Scientific Calculator")
-st.write("A sleek and interactive scientific calculator built with Streamlit!")
-
-# Sidebar layout for operation selection
-operation = st.sidebar.selectbox("Choose an Operation", 
-                                 ['Addition', 'Subtraction', 'Multiplication', 
-                                  'Division', 'Exponentiation', 'Square Root', 
-                                  'Logarithm', 'Sine', 'Cosine', 'Tangent'])
-
-st.sidebar.write("🧠 **Math is Fun!**")
-
-# Function to perform calculations
-def scientific_calculator(operation, num1=None, num2=None, angle=None):
+# Function to handle calculations
+def perform_operation(operation, num1, num2=None):
     try:
-        if operation == 'Addition':
+        if operation == "Addition":
             return num1 + num2
-        elif operation == 'Subtraction':
+        elif operation == "Subtraction":
             return num1 - num2
-        elif operation == 'Multiplication':
+        elif operation == "Multiplication":
             return num1 * num2
-        elif operation == 'Division':
-            return num1 / num2 if num2 != 0 else "Error! Division by zero."
-        elif operation == 'Exponentiation':
+        elif operation == "Division":
+            return num1 / num2 if num2 != 0 else "Error"
+        elif operation == "Exponentiation":
             return num1 ** num2
-        elif operation == 'Square Root':
-            return math.sqrt(num1) if num1 >= 0 else "Error! Negative number."
-        elif operation == 'Logarithm':
-            return math.log(num1) if num1 > 0 else "Error! Non-positive number."
-        elif operation == 'Sine':
-            return math.sin(math.radians(angle))
-        elif operation == 'Cosine':
-            return math.cos(math.radians(angle))
-        elif operation == 'Tangent':
-            return math.tan(math.radians(angle))
+        elif operation == "Square Root":
+            return math.sqrt(num1)
+        elif operation == "Logarithm":
+            return math.log(num1)
+        elif operation == "Sine":
+            return math.sin(math.radians(num1))
+        elif operation == "Cosine":
+            return math.cos(math.radians(num1))
+        elif operation == "Tangent":
+            return math.tan(math.radians(num1))
+        else:
+            return "Invalid operation"
     except:
-        return "Invalid input!"
+        return "Error"
 
-# Main input section based on selected operation
-st.header(f"Performing: **{operation}**")
+# App title
+st.title("🧮 Modern Scientific Calculator")
 
-# Inputs and results for binary operations (Addition, Subtraction, etc.)
-if operation in ['Addition', 'Subtraction', 'Multiplication', 'Division', 'Exponentiation']:
-    num1 = st.number_input(f"Enter first number for {operation}", value=0.0, step=1.0, format="%.2f")
-    num2 = st.number_input(f"Enter second number for {operation}", value=0.0, step=1.0, format="%.2f")
-    if st.button(f"Calculate {operation}"):
-        result = scientific_calculator(operation, num1=num1, num2=num2)
-        st.success(f"Result: {result}")
+# Display input field (like a real calculator screen)
+calc_input = st.text_input("", "0", key="display", disabled=True)
 
-# Inputs and results for square root
-elif operation == 'Square Root':
-    num1 = st.number_input("Enter number for Square Root", value=0.0, step=1.0, format="%.2f")
-    if st.button(f"Calculate {operation}"):
-        result = scientific_calculator(operation, num1=num1)
-        st.success(f"Result: {result}")
+# Store current input values
+st.session_state["current_input"] = ""
 
-# Inputs and results for logarithm
-elif operation == 'Logarithm':
-    num1 = st.number_input("Enter number for Logarithm (base e)", value=1.0, step=1.0, format="%.2f")
-    if st.button(f"Calculate {operation}"):
-        result = scientific_calculator(operation, num1=num1)
-        st.success(f"Result: {result}")
+# Calculator buttons with a grid layout
+buttons = [
+    "7", "8", "9", "÷",
+    "4", "5", "6", "×",
+    "1", "2", "3", "-",
+    "0", ".", "=", "+",
+    "√", "^", "log", "AC",
+    "sin", "cos", "tan", "C"
+]
 
-# Inputs and results for trigonometric functions (Sine, Cosine, Tangent)
-elif operation in ['Sine', 'Cosine', 'Tangent']:
-    angle = st.number_input(f"Enter angle in degrees for {operation}", value=0.0, step=1.0, format="%.2f")
-    if st.button(f"Calculate {operation}"):
-        result = scientific_calculator(operation, angle=angle)
-        st.success(f"Result: {result}")
+# Helper variables
+stored_number = None
+stored_operator = None
 
-# Footer for calculator
+# Calculator grid layout
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader("Operation Panel")
+
+    def button_click(label):
+        global stored_number, stored_operator
+
+        if label in ['+', '-', '×', '÷', '^', 'log', 'sin', 'cos', 'tan', '√']:
+            if st.session_state['current_input']:
+                stored_number = float(st.session_state['current_input'])
+                st.session_state['display'] = str(stored_number)
+                stored_operator = label
+                st.session_state['current_input'] = ""
+        elif label == "=":
+            if stored_operator and st.session_state['current_input']:
+                second_number = float(st.session_state['current_input'])
+                if stored_operator == '+':
+                    result = perform_operation("Addition", stored_number, second_number)
+                elif stored_operator == '-':
+                    result = perform_operation("Subtraction", stored_number, second_number)
+                elif stored_operator == '×':
+                    result = perform_operation("Multiplication", stored_number, second_number)
+                elif stored_operator == '÷':
+                    result = perform_operation("Division", stored_number, second_number)
+                elif stored_operator == '^':
+                    result = perform_operation("Exponentiation", stored_number, second_number)
+                elif stored_operator == "log":
+                    result = perform_operation("Logarithm", stored_number)
+                elif stored_operator == "sin":
+                    result = perform_operation("Sine", stored_number)
+                elif stored_operator == "cos":
+                    result = perform_operation("Cosine", stored_number)
+                elif stored_operator == "tan":
+                    result = perform_operation("Tangent", stored_number)
+                elif stored_operator == "√":
+                    result = perform_operation("Square Root", stored_number)
+                
+                st.session_state['display'] = str(result)
+                st.session_state['current_input'] = str(result)
+                stored_number = None
+                stored_operator = None
+        elif label == "AC":
+            st.session_state['display'] = "0"
+            st.session_state['current_input'] = ""
+            stored_number = None
+            stored_operator = None
+        elif label == "C":
+            st.session_state['current_input'] = ""
+            st.session_state['display'] = "0"
+        else:
+            st.session_state['current_input'] += label
+            st.session_state['display'] = st.session_state['current_input']
+
+    # Create buttons dynamically
+    with st.container():
+        for i, button in enumerate(buttons):
+            if i % 4 == 0:
+                st.markdown("<br>", unsafe_allow_html=True)
+            if st.button(button):
+                button_click(button)
+
+# Footer
 st.markdown("***")
-st.write("🔢 **Developed using Python & Streamlit** | 📅 2024")
+st.write("🔢 **Developed using Python & Streamlit** | 2024")
